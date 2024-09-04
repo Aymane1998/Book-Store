@@ -12,12 +12,12 @@ router.post('/', async (req, res) => {
     const savedBooks = [];
 
     for (const book of books) {
-      const { title, author, publishYear, image } = book;
+      const { title, author, publishYear, image, description } = book;
 
-      if (!title || !author || !publishYear) {
+      if (!title || !author || !publishYear || description) {
         return res.status(400).send({
           message:
-            'Please send all required fields: title, author, publishYear',
+            'Please send all required fields: title, author, publishYear , description',
         });
       }
 
@@ -25,6 +25,7 @@ router.post('/', async (req, res) => {
         title,
         author,
         publishYear,
+        description: description || '',
         image: image || '', // Default to an empty string if image is not provided
       };
 
@@ -50,10 +51,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const books = await Book.find({});
-    return res.status(200).json({
-      count: books.length,
-      data: books,
-    });
+    return res.status(200).json({data: books});
   } catch (error) {
     console.log(error.message);
     res.status(500).send({ message: error.message });
@@ -76,13 +74,16 @@ router.get('/:id', async (req, res) => {
 // Route for Update a Book
 router.put('/:id', async (req, res) => {
   try {
-    if (!req.body.title || !req.body.author || !req.body.publishYear) {
-      return res
-        .status(404)
-        .send({
-          message:
-            'Please send all required fields: title, author, publishYear',
-        });
+    if (
+      !req.body.title ||
+      !req.body.author ||
+      !req.body.publishYear ||
+      !req.body.description
+    ) {
+      return res.status(404).send({
+        message:
+          'Please send all required fields: title, author, publishYear, Description',
+      });
     }
 
     const { id } = req.params;
