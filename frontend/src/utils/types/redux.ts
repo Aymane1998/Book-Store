@@ -20,4 +20,4 @@ export interface NoDataResponse {
 }
 
 export type ApiDataResponse<T> = ApiResponse &
-  (T extends any[] ? { data: T } : { data: T | null });
+  (T extends unknown[] ? { data: T } : { data: T | null });

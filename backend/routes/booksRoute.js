@@ -1,23 +1,35 @@
 import express from 'express';
 import { Book } from '../models/bookModel.js';
-
+import multer from 'multer';
 const router = express.Router();
 
-// Route for save a new Book
-router.post('/', async (req, res) => {
-  try {
-    const books = Array.isArray(req.body) ? req.body : [req.body]; // Convert single object to array
+// Configure multer to store images in an 'uploads/' directory
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
 
-    // Array to hold the saved books
+const upload = multer({ storage: storage });
+
+
+// Route for saving a new Book with image file
+router.post('/', upload.single('image'), async (req, res) => {
+  try {
+    const books = Array.isArray(req.body.books) ? req.body.books : [req.body];
     const savedBooks = [];
 
     for (const book of books) {
-      const { title, author, publishYear, image, description } = book;
+      const { title, author, publishYear, description } = book;
+      const imagePath = req.file ? req.file.path : '';
 
-      if (!title || !author || !publishYear || description) {
+      if (!title || !author || !publishYear || !description) {
         return res.status(400).send({
           message:
-            'Please send all required fields: title, author, publishYear , description',
+            'Please send all required fields: title, author, publishYear, description',
         });
       }
 
@@ -25,20 +37,18 @@ router.post('/', async (req, res) => {
         title,
         author,
         publishYear,
-        description: description || '',
-        image: image || '', // Default to an empty string if image is not provided
+        description,
+        image: imagePath, // Use file path for the image
       };
 
       const savedBook = await Book.create(newBook);
       savedBooks.push(savedBook);
     }
 
-    // If only one book was sent (not an array), return just that book
     if (savedBooks.length === 1) {
       return res.status(201).send(savedBooks[0]);
     }
 
-    // If an array was sent, return the array of saved books
     return res.status(201).send(savedBooks);
   } catch (error) {
     console.error('Error occurred:', error);
@@ -51,7 +61,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const books = await Book.find({});
-    return res.status(200).json({data: books});
+    return res.status(200).json([books]);
   } catch (error) {
     console.log(error.message);
     res.status(500).send({ message: error.message });
@@ -72,30 +82,41 @@ router.get('/:id', async (req, res) => {
 });
 
 // Route for Update a Book
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
-    if (
-      !req.body.title ||
-      !req.body.author ||
-      !req.body.publishYear ||
-      !req.body.description
-    ) {
-      return res.status(404).send({
+    const { id } = req.params;
+    const { title, author, publishYear, description } = req.body;
+
+    if (!title || !author || !publishYear || !description) {
+      return res.status(400).send({
         message:
-          'Please send all required fields: title, author, publishYear, Description',
+          'Please provide all required fields: title, author, publishYear, description',
       });
     }
 
-    const { id } = req.params;
+    const imagePath = req.file ? req.file.path : undefined;
 
-    const result = await Book.findByIdAndUpdate(id, req.body);
+    const updatedBook = {
+      title,
+      author,
+      publishYear,
+      description,
+    };
+
+    if (imagePath) {
+      updatedBook.image = imagePath; // Update only if a new image is provided
+    }
+
+    const result = await Book.findByIdAndUpdate(id, updatedBook, { new: true });
 
     if (!result) {
       return res.status(404).json({ message: 'Book not found' });
     }
-    return res.status(200).send({ message: 'Book updated successfully' });
+    return res
+      .status(200)
+      .send({ message: 'Book updated successfully', book: result });
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     res.status(500).send({ message: error.message });
   }
 });
