@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createBooks, getBooks } from "./booksAPI";
+import { createBooks, deleteBook, getBooks } from "./booksAPI";
 import { CreateBookPayload } from "../types";
 
 
@@ -18,6 +18,15 @@ export const createBooksAsync = createAsyncThunk(
   'books/createBooks',
   async (body: CreateBookPayload) => {
     const response = await createBooks(body);
+
+    return response;
+  }
+);
+
+export const deleteBookAsync = createAsyncThunk(
+  'books/deleteBook',
+  async (id: string) => {
+    const response = await deleteBook(id);
 
     return response;
   }

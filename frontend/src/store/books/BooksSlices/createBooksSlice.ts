@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit";
 import { Book } from "../../../utils/types/Book";
 import { ApiDataResponse } from "../../../utils/types/redux";
 import { ReduxStatus } from "../../../utils/types/reduxStatusValues";
-import { createSnackbar } from "../../../Providers/CSnackbarProvider";
 import { createBooksAsync } from "../booksAsync";
 
 const initialState: ApiDataResponse<Book | null> = {
@@ -30,19 +29,11 @@ const createBooksSlice = createSlice({
         state.status = ReduxStatus.Succeeded;
         state.alert.successMessage = 'createBooks successful';
         state.data = action.payload;
-        createSnackbar({
-          message: "Book is added with success.",
-          variant: 'success',
-        });
       })
       .addCase(createBooksAsync.rejected, (state, action) => {
         state.status = ReduxStatus.Failed;
         state.error = action.error.message;
         state.alert.errorMessage = 'createBooks failed';
-        createSnackbar({
-          message: "A proble has occured, please try again",
-          variant: 'error',
-        });
       });
   },
 });

@@ -19,6 +19,14 @@ const getBookSlice = createSlice({
   name: 'getBook',
   initialState,
   reducers: {
+    removeItemBookList: (state, action) => {
+      const id = action.payload;
+
+      return {
+        ...state,
+        data: state.data.filter((item) => item._id !== id),
+      };
+    },
     resetGetBooksRequest: () => initialState,
   },
   extraReducers: (builder) => {
@@ -44,6 +52,6 @@ const getBookSlice = createSlice({
   },
 });
 
-export const { resetGetBooksRequest } = getBookSlice.actions;
+export const { resetGetBooksRequest, removeItemBookList } = getBookSlice.actions;
 
 export default getBookSlice.reducer;

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { TextField, Button, Box, Input } from '@mui/material';
+import { TextField, Button, Box, Input, Snackbar, Alert } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { ReduxStatus } from '../../utils/types/reduxStatusValues';
 import { createBooksAsync } from '../../store/books/booksAsync';
@@ -15,16 +15,21 @@ const validationSchema = Yup.object({
     .min(2, 'Author must be at least 2 characters')
     .required('Author is required'),
   publishYear: Yup.number()
-    .min(1000, 'publishYear must be a valid year')
-    .required('publishYear is required'),
+    .min(1000, 'Publish year must be a valid year')
+    .required('Publish year is required'),
   description: Yup.string().max(300, 'Description is too long'),
   image: Yup.mixed().nullable(),
 });
 
 export const AddBookForm = () => {
-    const dispatch = useAppDispatch()
-    const cretaeBookRequest = useAppSelector((state)=> state.book.createBooks,
-);
+  const dispatch = useAppDispatch();
+  const createBookRequest = useAppSelector((state) => state.book.createBooks);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
 
   const formik = useFormik({
     initialValues: {
@@ -36,19 +41,38 @@ export const AddBookForm = () => {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      // Convert publishYear to a number
       const payload = {
         ...values,
         publishYear: Number(values.publishYear),
       };
-
-      if (cretaeBookRequest.status !== ReduxStatus.Succeeded) {
-        dispatch(createBooksAsync(payload));
-      } else {
-        dispatch(resetCreateBooksRequest());
-      }
+      dispatch(createBooksAsync(payload));
     },
   });
+
+  useEffect(() => {
+    if (createBookRequest.status === ReduxStatus.Succeeded) {
+      setSnackbarMessage('The Book was added successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      dispatch(resetCreateBooksRequest());
+    } else if (createBookRequest.status === ReduxStatus.Failed) {
+      setSnackbarMessage(
+        'There was an error while adding the book, please try again'
+      );
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }, [createBookRequest.status, dispatch]);
+
+  const handleClose = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
 
   return (
     <Box
@@ -121,6 +145,22 @@ export const AddBookForm = () => {
       <Button color="primary" variant="contained" type="submit">
         Add Book
       </Button>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+          variant='filled'
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

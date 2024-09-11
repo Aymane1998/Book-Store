@@ -37,3 +37,13 @@ export const createBooks = async (
 
   return response.data;
 };
+
+export const deleteBook = async (id: string) => {
+
+  const response = await axios.delete(
+    `${BACK_URL}/books/${id}/`,
+    {},
+  );
+
+  return response;
+};
